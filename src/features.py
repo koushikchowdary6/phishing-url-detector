@@ -15,7 +15,7 @@ SUSPICIOUS_WORDS = (
     "login", "secure", "account", "update", "verify", "bank", "confirm",
     "signin", "password", "ebayisapi", "webscr", "paypal", "wp-admin",
 )
-SHORTENERS = ("bit.ly", "tinyurl", "goo.gl", "t.co", "ow.ly", "is.gd", "buff.ly")
+SHORTENERS = ("bit.ly", "tinyurl.com", "goo.gl", "t.co", "ow.ly", "is.gd", "buff.ly")
 FEATURE_NAMES = [
     "url_length", "host_length", "path_length", "num_dots", "num_hyphens",
     "num_subdomains", "num_digits", "num_special", "has_ip", "has_at",
