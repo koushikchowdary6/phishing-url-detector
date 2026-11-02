@@ -14,6 +14,15 @@ dots/hyphens/digits, subdomain count, IP-as-host, the `user@host` trick,
 HTTPS vs HTTP, URL-shortener domains, suspicious keywords (`login`, `verify`,
 `secure`, …), and the Shannon entropy of the hostname. See `src/features.py`.
 
+**Authority-aware feature integrity:** IP-host detection parses actual IPv4
+and IPv6 addresses instead of treating any four numeric labels as an IP.
+Shortener detection matches exact hostnames or DNS subdomains (not
+`bit.ly.attacker.example` or URL-path mentions), and the `@` feature
+requires URL userinfo rather than an ordinary email in a path or query.
+IP address octets are no longer counted as DNS subdomains. Regression
+tests cover these edge cases. These are lexical feature corrections,
+not independently measured phishing-detection improvements.
+
 ## Quickstart
 
 ```bash
