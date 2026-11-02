@@ -8,14 +8,14 @@ literature (long URLs, many subdomains, IP-as-host, '@' tricks, etc.).
 from __future__ import annotations
 
 import math
-import re
+from ipaddress import ip_address
 from urllib.parse import urlparse
 
 SUSPICIOUS_WORDS = (
     "login", "secure", "account", "update", "verify", "bank", "confirm",
     "signin", "password", "ebayisapi", "webscr", "paypal", "wp-admin",
 )
-SHORTENERS = ("bit.ly", "tinyurl", "goo.gl", "t.co", "ow.ly", "is.gd", "buff.ly")
+SHORTENERS = ("bit.ly", "tinyurl.com", "goo.gl", "t.co", "ow.ly", "is.gd", "buff.ly")
 FEATURE_NAMES = [
     "url_length", "host_length", "path_length", "num_dots", "num_hyphens",
     "num_subdomains", "num_digits", "num_special", "has_ip", "has_at",
@@ -37,8 +37,21 @@ def extract_features(url: str) -> dict[str, float]:
     host = parsed.hostname or ""
     path = parsed.path or ""
 
-    has_ip = 1.0 if re.match(r"^\d{1,3}(\.\d{1,3}){3}$", host) else 0.0
-    subdomains = max(0, host.count(".") - 1) if host else 0
+    # Parse IP addresses rather than matching four numeric-looking labels:
+    # 999.999.999.999 is not IPv4, and bracketed IPv6 is an IP host too.
+    try:
+        ip_address(host)
+        is_ip = True
+    except ValueError:
+        is_ip = False
+    # IP octets are not DNS subdomains. Match shorteners on DNS-label
+    # boundaries, never as substrings of an attacker-controlled hostname.
+    dns_host = host.rstrip(".")
+    subdomains = max(0, dns_host.count(".") - 1) if dns_host and not is_ip else 0
+    is_shortener = not is_ip and any(
+        dns_host == domain or dns_host.endswith("." + domain)
+        for domain in SHORTENERS
+    )
 
     return {
         "url_length": float(len(url)),
@@ -49,10 +62,10 @@ def extract_features(url: str) -> dict[str, float]:
         "num_subdomains": float(subdomains),
         "num_digits": float(sum(c.isdigit() for c in url)),
         "num_special": float(sum(c in "@?%=&_~" for c in url)),
-        "has_ip": has_ip,
-        "has_at": 1.0 if "@" in url else 0.0,
+        "has_ip": 1.0 if is_ip else 0.0,
+        "has_at": 1.0 if parsed.username is not None else 0.0,
         "has_https": 1.0 if parsed.scheme == "https" else 0.0,
-        "is_shortener": 1.0 if any(s in host for s in SHORTENERS) else 0.0,
+        "is_shortener": 1.0 if is_shortener else 0.0,
         "num_suspicious_words": float(sum(w in url.lower() for w in SUSPICIOUS_WORDS)),
         "host_entropy": _shannon_entropy(host),
     }
