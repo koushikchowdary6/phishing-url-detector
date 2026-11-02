@@ -46,9 +46,10 @@ PYTHONPATH=src python src/predict.py https://github.com/login http://paypal-secu
 PYTHONPATH=src python -m pytest tests/ -v
 ```
 
-7 tests cover feature extraction (the `@`-trick, IP-host, and HTTPS signals),
-dataset balance, and that the trained model beats chance and scores an obvious
-phish as malicious. CI trains and evaluates on every push.
+Tests cover authority-aware feature extraction, dataset balance, phishing
+classification, and **feature-disjoint holdout evaluation**. Duplicate lexical
+feature vectors are kept together across the train/test boundary. CI trains
+and evaluates on every push.
 
 ## ⚠️ Honesty about the data & metrics
 
@@ -57,8 +58,14 @@ legitimate-looking and phishing-looking URLs. Real phishing feeds (PhishTank,
 etc.) need live access and licensing, so this project ships a reproducible
 offline generator instead. Because synthetic phishing URLs are cleanly
 separable, the model scores near-perfectly here; **that is not a real-world
-accuracy claim.** The pipeline is designed so you can drop in a real labeled
-CSV and retrain — the feature extraction and model code don't change.
+accuracy claim.** Evaluation uses a seeded GroupShuffleSplit grouped by the
+**complete 14-feature vector**, not by row. This prevents identical feature
+vectors (including repeated synthetic URLs) from appearing in both training
+and holdout partitions. The CLI reports the number of duplicate feature rows
+and the resulting train/test sizes. This is an evaluation-integrity fix, not
+proof of generalization to independent domains or real phishing campaigns.
+A real, independently sourced and time-separated dataset is still needed.
+The pipeline is designed so you can drop in a real labeled CSV and retrain.
 
 ## Why this design
 
