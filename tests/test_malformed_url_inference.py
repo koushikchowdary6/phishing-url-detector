@@ -2,6 +2,7 @@
 
 import sys
 
+import numpy as np
 import pytest
 
 import predict
@@ -38,7 +39,7 @@ def test_predict_cli_skips_bad_urls_and_returns_nonzero(monkeypatch, capsys):
     class FakeClassifier:
         def predict_proba(self, features):
             assert len(features[0]) == 14
-            return [[0.75, 0.25]]
+            return np.array([[0.75, 0.25]])
 
     monkeypatch.setattr(predict, "train", lambda: (FakeClassifier(), {}, ()))
     monkeypatch.setattr(sys, "argv", [
@@ -58,7 +59,7 @@ def test_predict_cli_skips_bad_urls_and_returns_nonzero(monkeypatch, capsys):
 def test_predict_cli_success_with_only_valid_urls(monkeypatch, capsys):
     class FakeClassifier:
         def predict_proba(self, features):
-            return [[0.25, 0.75]]
+            return np.array([[0.25, 0.75]])
 
     monkeypatch.setattr(predict, "train", lambda: (FakeClassifier(), {}, ()))
     monkeypatch.setattr(sys, "argv", ["predict.py", "https://example.com/"])
