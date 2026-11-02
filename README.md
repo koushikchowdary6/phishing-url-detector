@@ -23,6 +23,13 @@ IP address octets are no longer counted as DNS subdomains. Regression
 tests cover these edge cases. These are lexical feature corrections,
 not independently measured phishing-detection improvements.
 
+**Malformed URL handling:** Empty hostnames, invalid IPv6 authorities, raw
+whitespace and terminal control characters are rejected before feature
+extraction. When scoring multiple URLs, the CLI reports the argument index
+without echoing the rejected input, continues with valid URLs, and exits with
+status 2 if any input was invalid. This is input and logging integrity, not a
+claim that URL-only features can establish whether a site is safe.
+
 ## Quickstart
 
 ```bash

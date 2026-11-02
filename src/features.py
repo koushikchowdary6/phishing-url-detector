@@ -32,9 +32,20 @@ def _shannon_entropy(s: str) -> float:
 
 
 def extract_features(url: str) -> dict[str, float]:
-    url = url.strip()
-    parsed = urlparse(url if "://" in url else "http://" + url)
-    host = parsed.hostname or ""
+    # Reject malformed/untrusted input rather than silently scoring an empty
+    # hostname or letting urlparse's IPv6/NFKC ValueError crash batch scoring.
+    # Raw controls and whitespace also make CLI output unsafe to log.
+    if not isinstance(url, str) or not url:
+        raise ValueError("URL must be a nonempty string")
+    if any(char.isspace() or ord(char) < 0x20 or ord(char) == 0x7F for char in url):
+        raise ValueError("URL contains raw whitespace or control characters")
+    try:
+        parsed = urlparse(url if "://" in url else "http://" + url)
+        host = parsed.hostname or ""
+    except ValueError as exc:
+        raise ValueError("URL has malformed authority") from exc
+    if not host:
+        raise ValueError("URL has no hostname")
     path = parsed.path or ""
 
     # Parse IP addresses rather than matching four numeric-looking labels:
